@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% set active = "ml" %}
+{% block content %}
+
+<h2 class="text-xl font-semibold mb-2 text-center">Model Evaluation: Confusion Matricies</h2>
+
+<h3 class="text-xl font-semibold mb-3">Company Cardholders</h3>
+<img class="rounded-xl border mb-6" src="{{ url_for('static', filename='images/CompanyCardholders_confusion_matrix.png') }}">
+<h3 class="text-xl font-semibold mb-3">Individual Cardholders (separated by Product Type)</h3>
+<img class="rounded-xl border mb-6" src="{{ url_for('static', filename='images/IndividualCardholders_Consumer_-_Platinum_confusion_matrix.png') }}">
+<img class="rounded-xl border mb-6" src="{{ url_for('static', filename='images/IndividualCardholders_Consumer_-_Gold_confusion_matrix.png') }}">
+<img class="rounded-xl border mb-6" src="{{ url_for('static', filename='images/IndividualCardholders_Consumer_-_Blue_Cash_confusion_matrix.png') }}">
+<img class="rounded-xl border mb-6" src="{{ url_for('static', filename='images/IndividualCardholders_Small_Business_confusion_matrix.png') }}">
+
+{% endblock %}

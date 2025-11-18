@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% set active = "" %}  {# You can set a tab if you have a nav bar in base.html #}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-6">
+    <h1 class="text-3xl font-bold mb-6 text-blue-700">CRR Result</h1>
+
+    <div class="bg-white p-6 rounded-2xl shadow-md space-y-3">
+        <p><strong>Customer ID:</strong> {{ customer[0] }}</p>
+        <p><strong>Age:</strong> {{ customer[1] }}</p>
+        <p><strong>Income:</strong> {{ customer[2] }}</p>
+        <p><strong>Employment Status:</strong> {{ customer[3] }}</p>
+        <p><strong>CRR Score:</strong> {{ crr }}</p>
+    </div>
+
+    <a href="/" class="inline-block mt-4 px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-800 transition">
+        ← Back to Dashboard
+    </a>
+</div>
+{% endblock %}

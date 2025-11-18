@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% set active = "feature_imp" %}
+{% block content %}
+
+<style>
+  .collapse-content { display: none; }
+</style>
+
+<script>
+  function toggleCollapse(id) {
+    const el = document.getElementById(id);
+    el.style.display = el.style.display === "none" ? "block" : "none";
+  }
+</script>
+
+<div class="space-y-6">
+    <h3 class="text-lg font-semibold text-center mb-3"> Click each tab to view diagrams. </h3>
+
+  <!-- ---------- TOP 10 FEATURE IMPORTANCES ---------- -->
+  <div class="border rounded-xl p-4">
+    <button class="w-full text-left text-xl font-semibold"
+            onclick="toggleCollapse('features')">
+      Top 10 Feature Importances
+    </button>
+
+    <div id="features" class="collapse-content mt-4">
+
+      <h3 class="text-lg font-semibold mb-3">Individual Cardholders</h3>
+      <img class="rounded-xl border mb-6" 
+           src="{{ url_for('static', filename='images/IndividualCardholders_rf_feature_importance.png') }}">
+
+      <h3 class="text-lg font-semibold mb-3">Company Cardholders</h3>
+      <img class="rounded-xl border mb-6" 
+           src="{{ url_for('static', filename='images/CompanyCardholders_rf_feature_importance.png') }}">
+
+    </div>
+  </div>
+
+  <!-- ---------- MISSINGNESS HEATMAPS ---------- -->
+  <div class="border rounded-xl p-4">
+    <button class="w-full text-left text-xl font-semibold"
+            onclick="toggleCollapse('missingness')">
+      Missingness Heatmaps
+    </button>
+
+    <div id="missingness" class="collapse-content mt-4">
+
+      <h4 class="text-lg font-semibold text-center mb-3">
+        Black lines separate High → Medium → Low Risk.
+      </h4>
+
+      <h3 class="text-lg font-semibold mb-2">Individual Cardholders</h3>
+      <img class="mb-6 rounded-xl border" 
+           src="{{ url_for('static', filename='images/IndividualCardholders_missingness_heatmap.png') }}">
+
+      <h3 class="text-lg font-semibold mb-2">Company Cardholders</h3>
+      <img class="rounded-xl border" 
+           src="{{ url_for('static', filename='images/CompanyCardholders_missingness_heatmap.png') }}">
+
+    </div>
+  </div>
+
+  <!-- ---------- CONFUSION MATRICES ---------- -->
+  <div class="border rounded-xl p-4">
+    <button class="w-full text-left text-xl font-semibold"
+            onclick="toggleCollapse('confusion')">
+      Model Evaluation: Confusion Matrices
+    </button>
+
+    <div id="confusion" class="collapse-content mt-4">
+
+      <h3 class="text-xl font-semibold mb-3">Company Cardholders</h3>
+      <img class="rounded-xl border mb-6" 
+           src="{{ url_for('static', filename='images/CompanyCardholders_confusion_matrix.png') }}">
+
+      <h3 class="text-xl font-semibold mb-3">
+        Individual Cardholders (by Product Type)
+      </h3>
+
+      <img class="rounded-xl border mb-6" 
+           src="{{ url_for('static', filename='images/IndividualCardholders_Consumer_-_Platinum_confusion_matrix.png') }}">
+
+      <img class="rounded-xl border mb-6" 
+           src="{{ url_for('static', filename='images/IndividualCardholders_Consumer_-_Gold_confusion_matrix.png') }}">
+
+      <img class="rounded-xl border mb-6" 
+           src="{{ url_for('static', filename='images/IndividualCardholders_Consumer_-_Blue_Cash_confusion_matrix.png') }}">
+
+      <img class="rounded-xl border mb-6" 
+           src="{{ url_for('static', filename='images/IndividualCardholders_Small_Business_confusion_matrix.png') }}">
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,106 @@
+{% if table_rows %}
+<div class="overflow-auto border p-2">
+  <table id="{{ table_id }}" class="min-w-full border border-gray-300">
+    <thead class="bg-gray-200">
+      <tr>
+        {% for col in table_rows[0].keys() %}
+          <th class="border px-2 py-1 text-left">{{ col }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in table_rows %}
+        <tr>
+          {% for val in row.values() %}
+            <td class="border px-2 py-1">{{ val or 'N/A' }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+$(document).ready(function() {
+  const editableCols = [
+  
+  "Income",
+  "Bankruptcies",
+  "ProductType",
+  "OpenCreditLines",
+  "RepaymentHistory",
+  "Savings",
+  "CardLimit",
+  "CashAdvances",
+  "Age",
+  "Location",
+  "Citizenship",
+  "Education",
+  "EmploymentStatus",
+  "MaritalStatus"
+];
+
+  const table = $('#{{ table_id }}').DataTable({
+    paging: true,
+    searching: true,
+    ordering: true
+  });
+
+  // Cell click = make editable only if in editable list
+  $('#{{ table_id }} tbody').on('click', 'td', function() {
+    const colName = table.column(this).header().innerText.trim();
+
+    if (!editableCols.includes(colName)) return;
+
+    $(this).attr('contenteditable', 'true').focus();
+  });
+
+  // On blur = save change + auto-update Last_Updated
+  $('#{{ table_id }} tbody').on('blur', 'td[contenteditable=true]', function() {
+    const cell = table.cell(this);
+    const newValue = $(this).text().trim();
+
+    const rowData = table.row($(this).closest('tr')).data();
+    const recordId = rowData[0];  // assumes first column is ID
+    const colName = table.column(cell.index().column).header().innerText.trim();
+
+    fetch('/update_row', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        id: recordId,
+        column: colName,
+        value: newValue,
+        auto_update_date: true
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.new_risk_category) {
+        const riskCell = $(this).closest('tr').find('td').last();
+        riskCell.text(data.new_risk_category)
+                 .css('font-weight', '600')
+                 .css('color',
+                      data.new_risk_category === 'High Risk' ? 'red' :
+                      data.new_risk_category === 'Medium Risk' ? 'orange' :
+                      'green');
+      }
+
+      // Update Last_Updated cell if returned
+      if (data.last_updated) {
+        const headers = table.columns().header().toArray().map(h => $(h).text());
+        const index = headers.indexOf("Last Updated");
+        if (index !== -1) {
+          table.row($(this).closest('tr')).cell(index).data(data.last_updated).draw();
+        }
+      }
+
+      $(this).removeAttr('contenteditable');
+    })
+    .catch(err => console.error('Update failed:', err));
+  });
+});
+</script>
+{% else %}
+<p class="text-gray-500">No records found.</p>
+{% endif %}

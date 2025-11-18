@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="text-2xl font-semibold mb-4">Edit Customer Details</h2>
+
+<div class="mb-4">
+  <label for="type" class="mr-2">Select Type:</label>
+  <select id="type" class="border rounded px-2 py-1">
+    <option value="IndividualCardholders">Individual</option>
+    <option value="CompanyCardholders">Company</option>
+  </select>
+
+  <label for="idInput" class="ml-4 mr-2">Enter ID:</label>
+  <input id="idInput" type="text" placeholder="e.g. 101" class="border rounded px-2 py-1">
+
+  <button id="searchBtn" class="ml-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Search</button>
+</div>
+
+<div id="detailsContainer" class="hidden space-y-6"></div>
+
+<button id="saveBtn" class="hidden mt-4 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Save Changes</button>
+
+<div id="prediction" class="mt-4 text-lg font-semibold text-gray-700"></div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  input.non-editable {
+    background-color: #f8f8f8;
+    color: #555;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+const escapeHtml = str => String(str ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;")
+                                          .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// List of editable fields
+const editableFields = [
+  
+  "Income",
+  "Bankruptcies",
+  "ProductType",
+  "OpenCreditLines",
+  "RepaymentHistory",
+  "Savings",
+  "CardLimit",
+  "CashAdvances",
+  "Age",
+  "Location",
+  "Citizenship",
+  "Education",
+  "EmploymentStatus",
+  "MaritalStatus"
+];
+
+document.getElementById("searchBtn").addEventListener("click", () => {
+  const id = document.getElementById("idInput").value.trim();
+  const type = document.getElementById("type").value;
+  if (!id) return alert("Please enter an ID.");
+
+  fetch("/get_user_details", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({id, table: type})
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) return alert(data.error);
+    const rows = data.rows;
+    if (!rows.length) return alert("No records found for this ID.");
+
+    const container = document.getElementById("detailsContainer");
+    container.innerHTML = "";
+
+    rows.forEach((row) => {
+      const card = document.createElement("div");
+      card.className = "border-2 border-gray-300 rounded-xl p-5 shadow-md bg-gray-50 space-y-4";
+      card.dataset.rowid = row.ROWID || row.ID;
+
+      // Header with Account Number + RiskCategory
+      const header = document.createElement("div");
+      header.className = "flex justify-between items-center mb-2 p-2 bg-gray-200 rounded";
+      const accountDiv = document.createElement("div");
+      accountDiv.className = "text-lg font-bold";
+      accountDiv.textContent = `Account Number: ${row.AccountNumber ?? "N/A"}`;
+      const riskDiv = document.createElement("div");
+      riskDiv.className = "text-lg font-semibold";
+      riskDiv.textContent = row.RiskCategory ?? "Unknown";
+      if (row.RiskCategory === "High Risk") riskDiv.style.color = "red";
+      else if (row.RiskCategory === "Medium Risk") riskDiv.style.color = "orange";
+      else riskDiv.style.color = "green";
+
+      header.appendChild(accountDiv);
+      header.appendChild(riskDiv);
+      card.appendChild(header);
+
+      // Render fields with editable/non-editable
+      const keys = Object.keys(row).filter(k => k !== "ROWID");
+      keys.forEach(key => {
+        const fieldWrap = document.createElement("div");
+        const isEditable = editableFields.includes(key);
+        fieldWrap.innerHTML = `
+          <label class="font-semibold block mb-1">${key}</label>
+          <input
+            class="border rounded px-2 py-1 w-full ${isEditable ? '' : 'non-editable'}"
+            value="${escapeHtml(row[key])}"
+            ${["ID","RiskCategory"].includes(key) ? "readonly" : ""}
+            data-col="${key}"
+            ${isEditable ? "" : "readonly"}
+          />
+        `;
+        card.appendChild(fieldWrap);
+      });
+
+      container.appendChild(card);
+    });
+
+    container.classList.remove("hidden");
+    document.getElementById("saveBtn").classList.remove("hidden");
+    document.getElementById("prediction").textContent =
+      "Current CRR Category: " + rows.map(r => r.RiskCategory).join(", ");
+  })
+  .catch(err => console.error(err));
+});
+
+// Save changes via AJAX
+document.getElementById("saveBtn").addEventListener("click", () => {
+  const type = document.getElementById("type").value;
+  const id = document.getElementById("idInput").value.trim();
+  const cards = Array.from(document.querySelectorAll("#detailsContainer > div"));
+
+  const rowsData = cards.map(card => {
+    const inputs = Array.from(card.querySelectorAll("input"));
+    const rowObj = {};
+    inputs.forEach(input => {
+      if (editableFields.includes(input.dataset.col)) {
+        rowObj[input.dataset.col] = input.value.trim();
+      }
+    });
+    rowObj.ROWID = card.dataset.rowid;
+    return rowObj;
+  });
+
+  fetch("/update_user_details", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({id, table: type, rows: rowsData, auto_update_date: true})
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) return alert(data.error);
+
+    // Update editable fields, RiskCategory, and ML CRR
+    data.rows.forEach((updatedRow, idx) => {
+      const card = cards[idx];
+
+      Object.keys(updatedRow).forEach(col => {
+        const input = card.querySelector(`input[data-col="${col}"]`);
+        if (input && editableFields.includes(col)) input.value = updatedRow[col];
+      });
+
+      // Update header RiskCategory
+      const riskDiv = card.querySelector("div.flex > div:nth-child(2)");
+      if (riskDiv) {
+        riskDiv.textContent = updatedRow.RiskCategory;
+        riskDiv.style.color =
+          updatedRow.RiskCategory === "High Risk" ? "red" :
+          updatedRow.RiskCategory === "Medium Risk" ? "orange" : "green";
+      }
+    });
+
+    // Show updated Risk + ML CRR
+    document.getElementById("prediction").innerHTML =
+      data.rows.map(r => `
+        <div class="mt-2">
+          <span class="font-bold">Predicted Risk Category:</span> ${r.RiskCategory}<br>
+          <span class="font-bold">ML Predicted CRR Score:</span> ${r.ML_CRR_Pred ?? "N/A"}<br>
+          <span class="font-bold">Last Updated:</span> ${r.Last_Updated ?? "N/A"}
+        </div>
+      `).join("");
+  })
+  .catch(err => console.error(err));
+});
+</script>
+{% endblock %}

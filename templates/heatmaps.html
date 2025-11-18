@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% set active = "heatmaps" %}
+{% block content %}
+
+<h2 class="text-xl font-semibold mb-2 text-center">Missingness Heatmaps</h2>
+<h4 class="text-lg font-semibold mb-2">Black lines separate High, Medium, and Low Risk (ordered top to bottom, respectively). We can see that more missingness is correlated with a higher risk.</h4>
+
+<h3 class="text-lg font-semibold mb-2">Individual Cardholders</h3>
+<img class="mb-6 rounded-xl border" src="{{ url_for('static', filename='images/IndividualCardholders_missingness_heatmap.png') }}">
+
+<h3 class="text-lg font-semibold mb-2">Company Cardholders</h3>
+<img class="rounded-xl border" src="{{ url_for('static', filename='images/CompanyCardholders_missingness_heatmap.png') }}">
+
+{% endblock %}

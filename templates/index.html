@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% set active = "individuals" %}
+
+{% block content %}
+<h2 class="text-xl font-semibold mb-4">Individual Cardholders</h2>
+<h3 class="text font-semibold mb-4">Scroll to view full table.</h3>
+
+<div class="overflow-auto border p-2">
+  <table id="indTable" class="min-w-full border border-gray-300">
+    <thead class="bg-gray-200">
+      <tr>
+        <th>ID</th>
+        <th>AccountNumber</th>
+        <th>Age</th>
+        <th>Bankruptcies</th>
+        <th>CardLimit</th>
+        <th>CashAdvances</th>
+        <th>Citizenship</th>
+        <th>CRR_Score</th>
+        <th>Education</th>
+        <th>EmploymentStatus</th>
+        <th>Hybrid_CRR</th>
+        <th>Hybrid_Risk</th>
+        <th>Income</th>
+        <th>Last_Updated</th>
+        <th>Location</th>
+        <th>MaritalStatus</th>
+        <th>ML_CRR_Pred</th>
+        <th>Name</th>
+        <th>OpenCreditLines</th>
+        <th>ProductType</th>
+        <th>RepaymentHistory</th>
+        <th>RiskCategory</th>
+        <th>Savings</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#indTable').DataTable({
+        ajax: "/get_individuals_json",
+        columns: [
+            { data: "ID" },
+            { data: "AccountNumber" },
+            { data: "Age" },
+            { data: "Bankruptcies" },
+            { data: "CardLimit" },
+            { data: "CashAdvances" },
+            { data: "Citizenship" },
+            { data: "CRR_Score" },
+            { data: "Education" },
+            { data: "EmploymentStatus" },
+            { data: "Hybrid_CRR" },
+            { data: "Hybrid_Risk" },
+            { data: "Income" },
+            { data: "Last_Updated" },
+            { data: "Location" },
+            { data: "MaritalStatus" },
+            { data: "ML_CRR_Pred" },
+            { data: "Name" },
+            { data: "OpenCreditLines" },
+            { data: "ProductType" },
+            { data: "RepaymentHistory" },
+            { data: "RiskCategory" },
+            { data: "Savings" }
+        ],
+        order: [[0, 'asc']],   // auto-sort by ID ascending
+        scrollX: true,
+        paging: true,
+        searching: true,
+        ordering: true
+    });
+});
+</script>
+{% endblock %}

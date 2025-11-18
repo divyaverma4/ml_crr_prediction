@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% set active = "companies" %}
+
+{% block content %}
+<h2 class="text-xl font-semibold mb-4">Company Cardholders</h2>
+<h3 class="text font-semibold mb-4">Scroll horizontally to view full table.</h3>
+
+<!-- DataTable -->
+<table id="compTable" class="min-w-full border border-gray-300">
+    <thead class="bg-gray-200">
+        <tr>
+            <th>ID</th>
+<th>Account Number</th>
+            <th>Role</th>
+<th>ML CRR Score</th>
+<th>ML Risk Category</th>
+<th>Hybrid CRR Score</th>
+<th>Hybrid Risk Category</th>
+<th>Income</th>
+<th>Bankruptcies</th>
+<th>Product Type</th>
+<th>Open Credit Lines</th>
+<th>Repayment History</th>
+<th>Savings</th>
+<th>Card Limit</th>
+<th>Cash Advances</th>
+<th>Age</th>
+<th>Name</th>
+<th>Location</th>
+<th>Citizenship</th>
+<th>Education</th>
+<th>Employment Status</th>
+<th>Marital Status</th>
+<th>Last Updated</th>
+        </tr>
+    </thead>
+</table>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#compTable').DataTable({
+        ajax: '/get_companies_json',
+        columns: [
+            { data: 'ID'},
+            { data: 'AccountNumber' },
+            { data: 'Role'},
+            { data: 'ML_CRR_Pred' },
+            { data: 'RiskCategory' },
+            { data: 'Hybrid_CRR' },
+            { data: 'Hybrid_Risk' },
+            { data: 'Income' },
+            { data: 'Bankruptcies' },
+            { data: 'ProductType' },
+            { data: 'OpenCreditLines' },
+            { data: 'RepaymentHistory' },
+            { data: 'Savings' },
+            { data: 'CardLimit' },
+            { data: 'CashAdvances' },
+            { data: 'Age' },
+            { data: 'Name' },
+            { data: 'Location' },
+            { data: 'Citizenship' },
+            { data: 'Education' },
+            { data: 'EmploymentStatus' },
+            { data: 'MaritalStatus' },
+            { data: 'Last_Updated' }
+        ],
+        paging: true,
+        searching: true,
+        ordering: true,
+        scrollX: true,        // allow horizontal scroll
+        autoWidth: false
+    });
+});
+</script>
+
+{% endblock %}
