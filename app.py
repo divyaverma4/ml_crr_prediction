@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 import sqlite3
 import pandas as pd
 import joblib
@@ -8,7 +8,65 @@ from datetime import datetime
 
 
 app = Flask(__name__)
+app.secret_key = "your-secret-key"      # REQUIRED for login sessions
 DB_FILE = "card_risk.db"
+
+# -----------------------------
+# Simple user store (roles)
+# -----------------------------
+USERS = {
+    "admin@example.com": {"password": "12345678", "role": "admin"},
+    "viewer@example.com": {"password": "12345678", "role": "viewer"}
+}
+
+
+# -----------------------------
+# Login Required Decorators
+# -----------------------------
+def login_required(func):
+    def wrapper(*args, **kwargs):
+        if "username" not in session:
+            return redirect(url_for("login"))
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+
+def admin_required(func):
+    def wrapper(*args, **kwargs):
+        if session.get("role") != "admin":
+            return jsonify({"error": "Unauthorized — Admin only"}), 403
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+
+# -----------------------------
+# Login & Logout Routes
+# -----------------------------
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]        # from your HTML form
+        password = request.form["password"]
+
+        user = USERS.get(email)
+        if user and user["password"] == password:
+            session["username"] = email
+            session["role"] = user["role"]
+            return redirect(url_for("edit_details_page"))   # redirect after successful login
+
+        return render_template("login.html", error="Invalid email or password")
+
+    return render_template("login.html")
+
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
 
 # Load trained Random Forest model
 model_tuple = joblib.load("rf_crr_model.pkl")
@@ -56,6 +114,7 @@ def get_companies():
 # Dashboard Route
 # -----------------------------
 @app.route("/")
+@login_required
 def dashboard():
     individuals = get_individuals()
     companies = get_companies()
@@ -69,7 +128,6 @@ def dashboard():
     ind_counts = summarize(individuals)
     comp_counts = summarize(companies)
 
-    # Example placeholders
     predictions = [
         {"customer_id": 'CUST-1001', "credit_limit": 5000},
         {"customer_id": 'CUST-1002', "credit_limit": 12000},
@@ -91,19 +149,23 @@ def dashboard():
         features=features,
         feature_labels=feature_labels,
         feature_values=feature_values,
-        active="dashboard"
+        active="dashboard",
+        role=session.get("role")
     )
 
+@app.route("/edit_details")
+@login_required
+def edit_details_page():
+    return render_template("edit_details.html", active="edit_details", role=session.get("role"))
 
 # -----------------------------
-# Other Routes
+# Other Routes (protected)
 # -----------------------------
 @app.route("/individuals")
+@login_required
 def individuals_page():
-    # Always fetch fresh data from DB
     rows = get_individuals()
 
-    # For pie chart counts
     high = [d for d in rows if str(d["RiskCategory"]).strip().lower() == "high risk"]
     medium = [d for d in rows if str(d["RiskCategory"]).strip().lower() == "medium risk"]
     low = [d for d in rows if str(d["RiskCategory"]).strip().lower() == "low risk"]
@@ -113,16 +175,16 @@ def individuals_page():
         "individuals.html",
         rows=rows,
         ind_counts=ind_counts,
-        active="individuals"
+        active="individuals",
+        role=session.get("role")
     )
 
 
 @app.route("/companies")
+@login_required
 def companies_page():
-    # Always fetch fresh data from DB
     rows = get_companies()
 
-    # For pie chart counts
     high = [d for d in rows if str(d["RiskCategory"]).strip().lower() == "high risk"]
     medium = [d for d in rows if str(d["RiskCategory"]).strip().lower() == "medium risk"]
     low = [d for d in rows if str(d["RiskCategory"]).strip().lower() == "low risk"]
@@ -132,34 +194,33 @@ def companies_page():
         "companies.html",
         rows=rows,
         comp_counts=comp_counts,
-        active="companies"
+        active="companies",
+        role=session.get("role")
     )
 
 
 @app.route("/heatmaps")
+@login_required
 def heatmaps_page():
-    return render_template("heatmaps.html", active="heatmaps")
+    return render_template("heatmaps.html", active="heatmaps", role=session.get("role"))
 
 
 @app.route("/ml")
+@login_required
 def ml_page():
-    return render_template("ml.html", active="ml")
+    return render_template("ml.html", active="ml", role=session.get("role"))
 
 
 @app.route("/feature_imp")
+@login_required
 def feature_imp_page():
-    return render_template("feature_imp.html", active="feature_imp")
+    return render_template("feature_imp.html", active="feature_imp", role=session.get("role"))
 
 
-# -----------------------------
-# Edit Details Page
-# -----------------------------
-@app.route("/edit_details")
-def edit_details_page():
-    return render_template("edit_details.html", active="edit_details")
 
 
 @app.route("/get_user_details", methods=["POST"])
+@login_required
 def get_user_details():
     data = request.get_json()
     record_id = data.get("id")
@@ -173,7 +234,6 @@ def get_user_details():
     rows = cursor.fetchall()
     conn.close()
 
-    # Convert to list of dicts and fix NaN -> None
     rows_list = []
     for r in rows:
         row_dict = dict(r)
@@ -186,6 +246,7 @@ def get_user_details():
 
 
 @app.route("/update_user_details", methods=["POST"])
+@admin_required
 def update_user_details():
     data = request.get_json()
     record_id = data["id"]
@@ -260,7 +321,9 @@ def update_user_details():
 
     return jsonify({"rows": df.to_dict(orient="records")})
 
+
 @app.route("/update_row", methods=["POST"])
+@admin_required
 def update_row():
     data = request.get_json()
     record_id = data["id"]
@@ -286,7 +349,7 @@ def update_row():
         params=(record_id,)
     )
 
-    # --- preprocessing (same as your update_user_details route) ---
+    # --- preprocessing ---
     exclude_cols = ["CRR_Score", "RiskCategory", "ID", "Name", "AccountNumber", "ProductType"]
     df_features = df.drop(columns=[c for c in exclude_cols if c in df.columns])
     df_features = pd.get_dummies(df_features, drop_first=False)
@@ -312,6 +375,7 @@ def update_row():
 
 
 @app.route("/get_individuals_json")
+@login_required
 def get_individuals_json():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
@@ -329,24 +393,23 @@ def get_individuals_json():
     rows = cursor.fetchall()
     conn.close()
 
-    # Convert to list of dicts and reorder so ID is first
     data = []
     for r in rows:
         row_dict = dict(r)
-        # pop ID and insert at beginning
         id_val = row_dict.pop("ID")
         ordered_row = {"ID": id_val, **row_dict}
         data.append(ordered_row)
 
     return jsonify({"data": data})
 
+
 @app.route("/get_companies_json")
+@login_required
 def get_companies_json():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    # Select all columns, but we will reorder in Python so ID comes first
     cursor.execute("""
         SELECT AccountNumber, Age, Bankruptcies, CardLimit, CashAdvances,
                Citizenship, CRR_Score, Education, EmploymentStatus,
@@ -358,11 +421,9 @@ def get_companies_json():
     rows = cursor.fetchall()
     conn.close()
 
-    # Convert to list of dicts and reorder so ID is first
     data = []
     for r in rows:
         row_dict = dict(r)
-        # pop ID and insert at beginning
         id_val = row_dict.pop("ID")
         ordered_row = {"ID": id_val, **row_dict}
         data.append(ordered_row)
@@ -370,8 +431,8 @@ def get_companies_json():
     return jsonify({"data": data})
 
 
-# Update a row in the DB
 @app.route("/update_individual_row", methods=["POST"])
+@admin_required
 def update_individual_row():
     data = request.get_json()
     record_id = data.get("id")
@@ -381,17 +442,15 @@ def update_individual_row():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
-    # Update the field
     cursor.execute(f"UPDATE IndividualCardholders SET {column}=? WHERE ID=?", (value, record_id))
     conn.commit()
 
-    # Recalculate RiskCategory if needed (replace with your model logic)
     df = pd.read_sql_query("SELECT * FROM IndividualCardholders WHERE ID=?", conn, params=(record_id,))
 
-    # Example: model prediction
     exclude_cols = ["CRR_Score", "RiskCategory", "ID", "Name", "AccountNumber", "ProductType"]
     df_features = df.drop(columns=[c for c in exclude_cols if c in df.columns])
     df_features = pd.get_dummies(df_features, drop_first=False)
+
     feature_names = model_tuple[1]
     for col in feature_names:
         if col not in df_features.columns:
@@ -401,13 +460,14 @@ def update_individual_row():
     preds = model.predict(df_features)
     df["RiskCategory"] = [risk_category(x) for x in preds]
 
-    # Update RiskCategory in DB
     for index, row in df.iterrows():
-        cursor.execute("UPDATE IndividualCardholders SET RiskCategory=? WHERE ID=?", (row["RiskCategory"], row["ID"]))
+        cursor.execute(
+            "UPDATE IndividualCardholders SET RiskCategory=? WHERE ID=?",
+            (row["RiskCategory"], row["ID"])
+        )
     conn.commit()
     conn.close()
 
-    # Return updated RiskCategory and optional pie chart counts
     risk_counts = [
         int(pd.Series(df["RiskCategory"]).value_counts().get("High Risk", 0)),
         int(pd.Series(df["RiskCategory"]).value_counts().get("Medium Risk", 0)),
@@ -419,9 +479,9 @@ def update_individual_row():
         "risk_counts": risk_counts
     })
 
-
 # -----------------------------
 # Run Server
 # -----------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    # 127.0.0.1   crr_prediction
+    app.run(host="0.0.0.0", port=80, debug=True)

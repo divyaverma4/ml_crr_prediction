@@ -37,7 +37,6 @@ const escapeHtml = str => String(str ?? "").replace(/&/g, "&amp;").replace(/"/g,
 
 // List of editable fields
 const editableFields = [
-  
   "Income",
   "Bankruptcies",
   "ProductType",
@@ -54,6 +53,7 @@ const editableFields = [
   "MaritalStatus"
 ];
 
+// ------------------- Fetch user by ID -------------------
 document.getElementById("searchBtn").addEventListener("click", () => {
   const id = document.getElementById("idInput").value.trim();
   const type = document.getElementById("type").value;
@@ -76,7 +76,7 @@ document.getElementById("searchBtn").addEventListener("click", () => {
     rows.forEach((row) => {
       const card = document.createElement("div");
       card.className = "border-2 border-gray-300 rounded-xl p-5 shadow-md bg-gray-50 space-y-4";
-      card.dataset.rowid = row.ROWID || row.ID;
+      card.dataset.rowid = row.ID;  // Use ID, not ROWID
 
       // Header with Account Number + RiskCategory
       const header = document.createElement("div");
@@ -84,8 +84,9 @@ document.getElementById("searchBtn").addEventListener("click", () => {
       const accountDiv = document.createElement("div");
       accountDiv.className = "text-lg font-bold";
       accountDiv.textContent = `Account Number: ${row.AccountNumber ?? "N/A"}`;
+
       const riskDiv = document.createElement("div");
-      riskDiv.className = "text-lg font-semibold";
+      riskDiv.className = "text-lg font-semibold risk-category";  // Add class for JS updates
       riskDiv.textContent = row.RiskCategory ?? "Unknown";
       if (row.RiskCategory === "High Risk") riskDiv.style.color = "red";
       else if (row.RiskCategory === "Medium Risk") riskDiv.style.color = "orange";
@@ -124,7 +125,7 @@ document.getElementById("searchBtn").addEventListener("click", () => {
   .catch(err => console.error(err));
 });
 
-// Save changes via AJAX
+// ------------------- Save changes -------------------
 document.getElementById("saveBtn").addEventListener("click", () => {
   const type = document.getElementById("type").value;
   const id = document.getElementById("idInput").value.trim();
@@ -138,30 +139,32 @@ document.getElementById("saveBtn").addEventListener("click", () => {
         rowObj[input.dataset.col] = input.value.trim();
       }
     });
-    rowObj.ROWID = card.dataset.rowid;
+    rowObj.ID = card.dataset.rowid; // must match Flask route
     return rowObj;
   });
 
   fetch("/update_user_details", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({id, table: type, rows: rowsData, auto_update_date: true})
+    body: JSON.stringify({id, table: type, rows: rowsData})
   })
   .then(res => res.json())
   .then(data => {
     if (data.error) return alert(data.error);
 
-    // Update editable fields, RiskCategory, and ML CRR
+    // Update UI fields + RiskCategory + Last_Updated
     data.rows.forEach((updatedRow, idx) => {
       const card = cards[idx];
 
+      // Editable fields
       Object.keys(updatedRow).forEach(col => {
         const input = card.querySelector(`input[data-col="${col}"]`);
         if (input && editableFields.includes(col)) input.value = updatedRow[col];
+        if (input && col === "Last_Updated") input.value = updatedRow[col];
       });
 
-      // Update header RiskCategory
-      const riskDiv = card.querySelector("div.flex > div:nth-child(2)");
+      // Header RiskCategory
+      const riskDiv = card.querySelector(".risk-category");
       if (riskDiv) {
         riskDiv.textContent = updatedRow.RiskCategory;
         riskDiv.style.color =
@@ -170,7 +173,7 @@ document.getElementById("saveBtn").addEventListener("click", () => {
       }
     });
 
-    // Show updated Risk + ML CRR
+    // Show summary
     document.getElementById("prediction").innerHTML =
       data.rows.map(r => `
         <div class="mt-2">

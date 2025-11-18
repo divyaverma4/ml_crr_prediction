@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - CRR Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Card -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <!-- Blue accent top border -->
+            <div class="h-1 bg-blue-600 rounded-t-lg"></div>
+            
+            <!-- Content -->
+            <div class="p-8">
+                <!-- Header -->
+                <div class="mb-8">
+                    <h1 class="text-2xl font-semibold text-gray-900 mb-2">Welcome Back</h1>
+                    <div class="h-0.5 w-12 bg-blue-600 rounded"></div>
+                </div>
+
+                <!-- Login Form -->
+                <form class="space-y-5" method="POST" action="/login">
+                    <!-- Email Input -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                            Email Address
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            placeholder="you@example.com"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+                            required
+                        >
+                    </div>
+
+                    <!-- Password Input -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                            Password
+                        </label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="••••••••"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-colors"
+                            required
+                        >
+                    </div>
+
+                    <!-- Remember Me -->
+                    <div class="flex items-center justify-between text-sm">
+                        <label class="flex items-center">
+                            <input
+                                type="checkbox"
+                                name="remember"
+                                class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                            >
+                            <span class="ml-2 text-gray-700">Remember me</span>
+                        </label>
+                        <a href="#" class="text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                            Forgot password?
+                        </a>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button
+                        type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 mt-6"
+                    >
+                        Sign In
+                    </button>
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-8 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                <div class="flex items-center justify-center gap-2 text-xs text-gray-600">
+                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.338 5.59a6.79 6.79 0 0 0-3.826 6.686 6.75 6.75 0 0 0 7.967 6.78c2.495-.558 4.82-2.236 5.926-4.604.207-.413.456-.813.722-1.194.304-.524.454-1.158.454-1.809 0-.694-.162-1.325-.477-1.851-.315-.526-.773-.991-1.324-1.278-.551-.287-1.157-.432-1.773-.432-.616 0-1.22.145-1.773.432-.551.287-1.01.752-1.324 1.278-.315.526-.477 1.157-.477 1.851 0 .65.15 1.284.454 1.808.266.38.515.78.722 1.194 1.106 2.368 3.43 4.046 5.926 4.604 3.847.855 7.751-1.185 8.898-4.975.23-.642.356-1.3.356-1.962 0-.694-.162-1.325-.477-1.851" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Your data is encrypted and secure</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
