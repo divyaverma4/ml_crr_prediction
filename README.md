@@ -14,7 +14,7 @@ Using **Machine Learning (ML)** to determine **Customer Risk Rating (CRR)** in r
 - Python
 - Pandas, NumPy, scikit-learn
 - Flask, SQLite
-- HTML
+- HTML, CSS
 
 ## Quick Start
 1. Clone the repo:  
@@ -40,3 +40,4 @@ Using **Machine Learning (ML)** to determine **Customer Risk Rating (CRR)** in r
    ```bash
    flask run
    ```
+
